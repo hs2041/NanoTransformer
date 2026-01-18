@@ -8,13 +8,24 @@ class BigramLanguageModel(nn.Module):
     def __init__(self, vocab_size):
         super().__init__()
         self.token_embedding_table = nn.Embedding(vocab_size, vocab_size)
-    def forward(self, idx, targets):
+    def forward(self, idx, targets = None):
         logits = self.token_embedding_table(idx)
-        B, T, C = logits.shape
-        logits = logits.view(B*T, C)
-        targets = targets.view(B*T)
-        loss = F.cross_entropy(logits, targets)
+        if targets is None:
+            loss = None
+        else:
+            B, T, C = logits.shape
+            logits = logits.view(B*T, C)
+            targets = targets.view(B*T)
+            loss = F.cross_entropy(logits, targets)
         return logits, loss
+    def generate(self, idx, max_new_tokens):
+        for _ in range(max_new_tokens):
+            logits, loss = self(idx)
+            logits = logits[:, -1, :]
+            probs = F.softmax(logits, dim=-1)
+            idx_next = torch.multinomial(probs, num_samples=1)
+            idx = torch.cat((idx, idx_next), dim=1)
+        return idx
     # Let's build GPT by Andrej Karpathy
 with open('input.txt', 'r', encoding='utf-8') as f:
     text = f.read()
@@ -81,3 +92,19 @@ logits, loss = m(xb, yb)
 print(logits.shape)
 print(loss)
 
+
+print(decode(m.generate( idx = torch.zeros((1, 1), dtype = torch.long), max_new_tokens = 100)[0].tolist()))
+
+optimizer = torch.optim.AdamW(m.parameters(), lr=1e-3)
+batch_size = 32
+for steps in range(10000):
+    xb, yb = get_batch('train')
+    logits, loss = m(xb, yb)
+    optimizer.zero_grad(set_to_none=True)
+    loss.backward()
+    optimizer.step()
+    # print(loss.item())
+
+print(loss.item())
+
+print(decode(m.generate( idx = torch.zeros((1, 1), dtype = torch.long), max_new_tokens = 300)[0].tolist()))
