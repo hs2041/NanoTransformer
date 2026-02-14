@@ -22,3 +22,8 @@ generated_txt = generator("But the problem is", max_length = 30, num_return_sequ
 for generated in generated_txt:
     print(generated)
 # print(generated_txt)
+
+generated_txt = generator("He learned french because his girlfriend was from", max_length = 30, num_return_sequences = 5, truncation = True)
+
+for generated in generated_txt:
+    print(generated)
