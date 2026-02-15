@@ -90,3 +90,43 @@ class GPT(nn.Module):
         x = self.transformer.ln_f(x)
         logits = self.lm_head(x)
         return logits
+
+
+# Trickes to improve speed
+model = torch.compile(model)
+
+torch.autocast(device_type = device, dtype = torch.bloat16)
+
+ # Kernel fusion
+ # Reduce round trips to the memory on GPU during kernel computation
+
+ # Flash attention: Optimal usage of GPU memory (SRAM, HBM) for the attention computation step
+#  y = F.scaled_dot_product_attention(q, k, v, is_causal = True)
+
+# use good numbers, i.e., number that are divisible by powers of 2
+
+# Optimize learning
+    # Variable learning rate (higher in the beginning, decays over a cosine function)
+    # LInear gradual batch size increase
+    # Use weight decays (fused paramter in AdamW makes things faster)
+    # Use gradient accumulation to handle larger batch sizes
+
+# Distributed data parallelism
+  # Each GPU proceses different parts of the data
+  # Then a accumulation process aggregates the results from all the GPUs
+
+# from torch.distributed import init_process_group, destroy_process_group
+# ddp_rank = int(os.environ['RANK'])   
+# master_process = ddp_rank == 0 # printing, logging, checkpointing
+  # Similar to MPI
+
+# DDP does gradient synchronisation by itself, use no_sync() to disable it
+
+
+# Real time debugging tactic
+import code; code.interact(local= locals)
+
+# Wait for GPU to finish computation
+torch.synchronize()
+
+# Evaluation using helloswag
